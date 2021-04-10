@@ -33,7 +33,7 @@ const unverifiedembed = new Discord.MessageEmbed()
 const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
 
 // Mongoose variables
-mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true,  useUnifiedTopology: true});
+mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true, useCreateIndex: true,  useUnifiedTopology: true});
 mongoose.set("useCreateIndex", true);
 
 const tagSchema = new mongoose.Schema ({
@@ -180,9 +180,64 @@ client.on("message", msg => {
 
 // Tag system
 
-// client.on('message', msg => {
-//     if (msg.content.startsWith(prefix + 'tag'))
-// })
+client.on('message', msg => {
+    const tagArgs = msg.content.split(" ").slice(1);
+    if (msg.content.startsWith(prefix + 'tag')) {
+        // New tag
+        if (tagArgs[0] == 'new') {
+            let tagtitlesplit = tagArgs.slice(1,2);
+            let tagcontentsplit = tagArgs.slice(2);
+            let tagcontent = tagcontentsplit.join(' ')
+            let tagtitle = tagtitlesplit.join(' ')
+            console.log(tagtitle + ' content: ' + tagcontent)
+            const newTag = new tags({
+                tagName: tagtitle,
+                tagContent: tagcontent
+            })
+            newTag.save()
+            .then(msg.channel.send('Your tag, ' + tagtitle + ', has been saved!'))
+
+    }
+        // Calling upon tag
+        try {
+            if (tagArgs[0] == 'call') {
+                tags.findOne({tagName: tagArgs[1]}, function (err, tag) {
+                    if (err) {
+                        const errorembed = new Discord.MessageEmbed()
+                        .setColor('#ff0000 ')
+                        .setTitle('Error!')
+                        .addFields(
+                            { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+                        )
+                        .setDescription('')
+                        .setTimestamp()
+                        .setFooter('Sentencia Bot');
+                        msg.channel.send(errorembed)
+                        
+                    } else {
+                        let tagObject = tag.toObject(); 
+                        msg.channel.send(tagObject.tagContent)
+                    }
+                })
+            }
+        } catch (err) {
+            const errorembed = new Discord.MessageEmbed()
+            .setColor('#ff0000 ')
+            .setTitle('Error!')
+            .addFields(
+                { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+            )
+            .setDescription('')
+            .setTimestamp()
+            .setFooter('Sentencia Bot');
+            msg.channel.send(errorembed)
+        }
+
+        // Delete tag
+
+
+
+}});
 
 
 client.login(process.env.TOKEN); // Gets token from .env file (the last bit is the variable within .env)
