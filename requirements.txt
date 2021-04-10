@@ -1,0 +1,13 @@
+Required node modules:
+
+dotenv
+dotenv
+hypixel (that's literally the name of it)
+mojang-api
+axios
+
+You can install these via:
+
+npm i dotenv/dotenv/hypixel/mojang-api/axios
+
+Updated Last: 10th April 2021

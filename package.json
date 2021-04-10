@@ -1,0 +1,20 @@
+{
+  "name": "SentenciaBot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "discord.js": "^12.5.3",
+    "dotenv": "^8.2.0",
+    "hypixel": "^1.0.3",
+    "mojang-api": "^0.0.2",
+    "util": "^0.12.3"
+  }
+}
