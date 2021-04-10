@@ -6,6 +6,7 @@ let prefix = 's!'; // Prefix for bot
 const MojangAPI = require('mojang-api');
 const axios = require('axios');
 const hypixel = require('hypixel');
+const mongoose = require('mongoose')
 const client = new Discord.Client();
 const hypixelClient = new Hypixel({ key: process.env.HYPIXELKEY })
 // Importing other files (functions, api fetching etc.)
@@ -24,14 +25,23 @@ const unverifiedembed = new Discord.MessageEmbed()
 .setTitle('Incorrect username')
 .setDescription("The username's discord you provided does not match with your own.")
 .addFields(
-    { name: 'Take a look at our verify help guide', value: 'Run s!verifyhelp for the guide' }
+    { name: 'Take a look at our verify help guide', value: 'Type "verify help" for the guide!' }
 )
 .setTimestamp()
 .setFooter('Sentencia Bot');
 // Variables
 const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
 
+// Mongoose variables
+mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true,  useUnifiedTopology: true});
+mongoose.set("useCreateIndex", true);
 
+const tagSchema = new mongoose.Schema ({
+    tagName: String,
+    tagContent: String
+  });
+
+const tags = new mongoose.model("Tags", tagSchema);
 // Main code
 client.on('ready', () => {
     client.user.setActivity('s!verify', { type: 'WATCHING' })
@@ -49,12 +59,15 @@ const clean = text => {
         return text;
   }
   
+  
 
   
 client.on("message", msg => {
     const args = msg.content.split(" ").slice(1);
     if (msg.content.startsWith(prefix + 'eval')) {
-        if (msg.author.id != developerID1 || msg.author.id != developerID2) return;
+        if (msg.author.id != process.env.DEVID) {
+            msg.channel.send('Invalid Permissions. I see you lmao')
+        };
         try {
         const code = args.join(" ");
         let evaled = eval(code);
@@ -67,20 +80,33 @@ client.on("message", msg => {
         msg.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
         }
     }
+    
 });
 
 // Main commands
-// const errorembed = new Discord.MessageEmbed()
-// .setColor('#ff0000 ')
-// .setTitle('Error!')
-// .addFields(
-//     { name: 'An error occured!', value: 'Please forward this to a developer! ```' + err + "```" }
-// )
-// .setDescription('')
-// .setTimestamp()
-// .setFooter('Sentencia Bot');
-// msg.channel.send(errorembed)
-// Verify
+
+// Verify commands
+
+client.on("message", msg => {
+    if (msg.content.startsWith('verify help')) {
+        const verifyhelp = new Discord.MessageEmbed()
+        .setColor('#ED820E ')
+        .setTitle('Verify Instructions')
+        .addFields(
+            { name: 'Step 1', value: 'Log into Hypixel' },
+            { name: 'Step 2', value: 'Go to the second slot with your skin head and right click' },
+            { name: 'Step 3', value: 'Click the twitter icon (above the diamond)' },
+            { name: 'Step 4', value: 'Hover over the discord icon and left click' },
+            { name: 'Step 5', value: 'Go back to discord and copy your name and discriminator (yours is ' + msg.author.tag + ') and paste that into your chat'},
+            { name: 'Step 6', value: 'Go back and try to verify again using ' + prefix + 'verify!' },
+            { name: 'Video tutorial', value: 'Click [here](https://forms.gle/6dvCTWBXRDwscTo69) to see the tutorial'}
+        )
+        .setTimestamp()
+        .setFooter('Sentencia Bot');
+        msg.channel.send(verifyhelp)
+    };
+
+})
 
 client.on("message", msg => {
     const username = msg.content.split(" ").slice(1);
@@ -106,6 +132,7 @@ client.on("message", msg => {
                         if (msg.author.tag == res.data.player.socialMedia.links.DISCORD) {
                             msg.channel.send(verifyembed)
                             member.roles.add(verifiedRole)
+                            member.setNickname(res.data.player.displayname);
                         } else {
                             msg.channel.send(unverifiedembed)
     
@@ -115,14 +142,14 @@ client.on("message", msg => {
                             console.log('Sentencia Member!')
                             member.roles.add(sentenciaRole)
                         }
-                    });
-                    })
+                        
+                    });})
                     .catch(err => {
                         const errorembed = new Discord.MessageEmbed()
                         .setColor('#ff0000 ')
                         .setTitle('Error!')
                         .addFields(
-                            { name: 'An error occured!', value: 'Please forward this to a developer! ```' + err + "```" }
+                            { name: 'An error occured!', value: 'Please forward this to a developer(<@504196872706064415>)! ```' + err + "```" }
                         )
                         .setDescription('This is probably because of an invalid username')
                         .setTimestamp()
@@ -135,7 +162,7 @@ client.on("message", msg => {
                     .setColor('#ff0000 ')
                     .setTitle('Error!')
                     .addFields(
-                        { name: 'An error occured!', value: 'Please forward this to a developer! ```' + err + "```" }
+                        { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
                     )
                     .setDescription('')
                     .setTimestamp()
@@ -149,6 +176,13 @@ client.on("message", msg => {
 
     }
 })
+
+
+// Tag system
+
+// client.on('message', msg => {
+//     if (msg.content.startsWith(prefix + 'tag'))
+// })
 
 
 client.login(process.env.TOKEN); // Gets token from .env file (the last bit is the variable within .env)
