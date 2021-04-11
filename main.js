@@ -11,6 +11,20 @@ const client = new Discord.Client();
 const hypixelClient = new Hypixel({ key: process.env.HYPIXELKEY })
 // Importing other files (functions, api fetching etc.)
 
+// Variables
+const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
+let err = "";
+
+// Mongoose variables
+mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true, useCreateIndex: true,  useUnifiedTopology: true});
+mongoose.set("useCreateIndex", true);
+
+const tagSchema = new mongoose.Schema ({
+    tagName: String,
+    tagContent: String
+  });
+
+const tags = new mongoose.model("Tags", tagSchema);
 
 // Embeds
 const verifyembed = new Discord.MessageEmbed()
@@ -29,19 +43,17 @@ const unverifiedembed = new Discord.MessageEmbed()
 )
 .setTimestamp()
 .setFooter('Sentencia Bot');
-// Variables
-const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
 
-// Mongoose variables
-mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true, useCreateIndex: true,  useUnifiedTopology: true});
-mongoose.set("useCreateIndex", true);
+const errorembed = new Discord.MessageEmbed()
+.setColor('#ff0000 ')
+.setTitle('Error!')
+.addFields(
+    { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+)
+.setDescription('')
+.setTimestamp()
+.setFooter('Sentencia Bot • Error Handling');
 
-const tagSchema = new mongoose.Schema ({
-    tagName: String,
-    tagContent: String
-  });
-
-const tags = new mongoose.model("Tags", tagSchema);
 // Main code
 client.on('ready', () => {
     client.user.setActivity('s!verify', { type: 'WATCHING' })
@@ -110,13 +122,11 @@ client.on("message", msg => {
 
 client.on("message", msg => {
     const username = msg.content.split(" ").slice(1);
+    let authorID = msg.author.id
     const { guild } = msg;
     const verifiedRole = guild.roles.cache.find((role => role.name == 'Hypixel Verified'));
     const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Member'));
-    let authorID = msg.author.id
     const member = guild.members.cache.get(authorID);
-
-
     if (msg.content.startsWith(prefix + 'verify')) {
         MojangAPI.nameToUuid(username, function(err, result) {
             if (err) {
@@ -145,28 +155,10 @@ client.on("message", msg => {
                         
                     });})
                     .catch(err => {
-                        const errorembed = new Discord.MessageEmbed()
-                        .setColor('#ff0000 ')
-                        .setTitle('Error!')
-                        .addFields(
-                            { name: 'An error occured!', value: 'Please forward this to a developer(<@504196872706064415>)! ```' + err + "```" }
-                        )
-                        .setDescription('This is probably because of an invalid username')
-                        .setTimestamp()
-                        .setFooter('Sentencia Bot • Errors');
                         msg.channel.send(errorembed)})
 
 
                 } catch {
-                    const errorembed = new Discord.MessageEmbed()
-                    .setColor('#ff0000 ')
-                    .setTitle('Error!')
-                    .addFields(
-                        { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
-                    )
-                    .setDescription('')
-                    .setTimestamp()
-                    .setFooter('Sentencia Bot');
                     msg.channel.send(errorembed)
                 }
 
@@ -203,15 +195,7 @@ client.on('message', msg => {
             if (tagArgs[0] == 'call') {
                 tags.findOne({tagName: tagArgs[1]}, function (err, tag) {
                     if (err) {
-                        const errorembed = new Discord.MessageEmbed()
-                        .setColor('#ff0000 ')
-                        .setTitle('Error!')
-                        .addFields(
-                            { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
-                        )
-                        .setDescription('')
-                        .setTimestamp()
-                        .setFooter('Sentencia Bot');
+
                         msg.channel.send(errorembed)
                         
                     } else {
@@ -221,23 +205,69 @@ client.on('message', msg => {
                 })
             }
         } catch (err) {
-            const errorembed = new Discord.MessageEmbed()
-            .setColor('#ff0000 ')
-            .setTitle('Error!')
-            .addFields(
-                { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
-            )
-            .setDescription('')
-            .setTimestamp()
-            .setFooter('Sentencia Bot');
             msg.channel.send(errorembed)
         }
 
         // Delete tag
 
+        if (tagArgs[0] == 'delete') {
+            tags.deleteOne({tagName: tagArgs[1]}, function (err, tag) {
+                if (err) {
+                    msg.channel.send(errorembed)
+                } else {
+                    msg.channel.send('Deleted the tag!')
+                }
+            })
+        }
+
+        // List all tags
+
+        if (tagArgs[0] == 'all') {
+            tags.find({}, function (err, tags) {
+                // const alltags = new Discord.MessageEmbed()
+                // .setColor('#00B2EE ')
+                // .setTitle('All tags')
+                // for (tag in tags) {
+                //     {name: tags.tagName}
+                // }
+                
+                // .setTimestamp()
+                // .setFooter('Sentencia Bot');
+                console.log(tags[1])
+
+            })
+        }
+
 
 
 }});
+
+// QoL commands
+
+client.on('message', msg => {
+    const roledmember = msg.content.split(" ").slice(1);
+    const { guild } = msg;
+    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Member'));
+    const member = guild.members.cache.get(msg.author.id)
+    let rMember =
+    msg.mentions.members.first() || // `.first()` is a function.
+    msg.guild.members.cache.find((m) => m.user.tag === roledmember) ||
+    msg.guild.members;
+    try {
+        if (msg.content.startsWith(prefix + 'guildrole')){
+            if (msg.member.roles.cache.has('830600208760176701')) {
+                rMember.roles.add(sentenciaRole)
+                .then(msg.channel.send('Added role succesfully!'))
+                .catch(err => msg.channel.send('We have an error! ' + err))
+            } else {
+                msg.channel.send('Invalid permissions. I see you ;)')
+            }
+        }
+    } catch (err) {
+        console.log(err)
+    }
+   
+});
 
 
 client.login(process.env.TOKEN); // Gets token from .env file (the last bit is the variable within .env)
