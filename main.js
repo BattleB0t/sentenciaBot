@@ -156,29 +156,39 @@ client.on("message", msg => {
                 try {       
                     axios.get("https://api.hypixel.net/player?key=" + process.env.HYPIXELKEY +  "&uuid=" + result[0].id)
                     .then(res => {
-                        if (msg.author.tag == res.data.player.socialMedia.links.DISCORD) {
-                            const verifyembed = new Discord.MessageEmbed()
-                            .setColor('#00ff10 ')
-                            .setTitle('Succesfully Verified!')
-                            .setThumbnail('https://crafatar.com/avatars/' + result[0].id)
-                            .setDescription("You're now verified as `" + res.data.player.displayname + '`')
-                            .setTimestamp()
-                            .setFooter('Sentencia Bot');
-
-                            msg.channel.send(verifyembed)
-                            member.roles.add(verifiedRole)
-                            member.setNickname(res.data.player.displayname);
-                            // msg.channel.send('**To verify your Discord account on our server, you must have it linked to Hypixel in the game, if you have it linked please use this command:**```s!verify username```')
-                        } else {
-                            msg.channel.send(unverifiedembed)
+                    if (res.data.player == null) {
+                        msg.channel.send('Invalid Username!')
+                    } else {
+                        hypixelClient.findGuildByPlayer(result[0].id, (err, guildId) => { 
+                            if (msg.author.tag == res.data.player.socialMedia.links.DISCORD) {
+                                hypixelClient.getGuild(guildId, (err, guildinfo) => {
+                                const verifyembed = new Discord.MessageEmbed()
+                                .setColor('#00ff10 ')
+                                .setTitle('Succesfully Verified!')
+                                .setThumbnail('https://crafatar.com/avatars/' + result[0].id)
+                                .setDescription("You're now verified as `" + res.data.player.displayname + '` \n In the guild `' +  guildinfo.name + '`')
+                                .setTimestamp()
+                                .setFooter('Sentencia Bot');
     
-                        }
-                    hypixelClient.findGuildByPlayer(result[0].id, (err, guildId) => { 
-                        if (guildId == sentencia_id) {
-                            member.roles.add(sentenciaRole)
-                        }
+                                msg.channel.send(verifyembed)
+                                member.roles.add(verifiedRole)
+                                member.setNickname(res.data.player.displayname);
+                                // msg.channel.send('**To verify your Discord account on our server, you must have it linked to Hypixel in the game, if you have it linked please use this command:**```s!verify username```')
+                                })
+                            } else {
+                                msg.channel.send(unverifiedembed)
+        
+                            }
+    
+                            if (guildId == sentencia_id) {
+                                member.roles.add(sentenciaRole)
+                            }
+                            
+                        });
                         
-                    });})
+                    }
+
+                })
                     .catch(err => {
                         const errorembed = new Discord.MessageEmbed()
                         .setColor('#ff0000 ')
