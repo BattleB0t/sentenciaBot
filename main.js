@@ -225,7 +225,7 @@ client.on("message", msg => {
 client.on("message", msg => {
     const { guild } = msg;
     const verifiedRole = guild.roles.cache.find((role => role.name == 'Hypixel Verified'));
-    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Guild: Sentencia Eternal'));
+    const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
     const member = guild.members.cache.get(msg.author.id);
     if (msg.content.startsWith(prefix + 'unverify')) {
         member.setNickname(msg.author.username)
@@ -354,7 +354,7 @@ client.on('message', msg => {
 client.on('message', msg => {
     const roledmember = msg.content.split(" ").slice(1);
     const { guild } = msg;
-    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Member'));
+    const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
     const member = guild.members.cache.get(msg.author.id)
     let rMember =
     msg.mentions.members.first() || // `.first()` is a function.
