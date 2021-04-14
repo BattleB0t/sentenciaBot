@@ -1,8 +1,9 @@
 {
-  "name": "SentenciaBot",
-  "version": "1.0.0",
-  "description": "",
+  "name": "Sentencia Bot",
+  "version": "1.1.0",
+  "description": "A bot for sentencia discord server",
   "main": "main.js",
+  "start": "nodemon main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,11 +11,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
+    "@zikeji/hypixel": "^3.1.1",
+    "axios": "github:axios/axios",
     "discord.js": "^12.5.3",
     "dotenv": "^8.2.0",
+    "got": "^11.8.2",
+    "hy-profile": "^1.2.2",
     "hypixel": "^1.0.3",
+    "hypixel-api-wrapper": "^1.0.3",
     "mojang-api": "^0.0.2",
+    "mongoose": "^5.12.3",
     "util": "^0.12.3"
   }
 }

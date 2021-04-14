@@ -5,18 +5,28 @@ const Hypixel = require('hypixel');
 let prefix = 's!'; // Prefix for bot
 const MojangAPI = require('mojang-api');
 const axios = require('axios');
-const hypixel = require('hypixel');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const sb = require('hy-profile')
+const sbApi = require('hypixel-api-wrapper');
+const hypixelClient = new Hypixel({ key: process.env.HYPIXELKEY})
 const client = new Discord.Client();
-const hypixelClient = new Hypixel({ key: process.env.HYPIXELKEY })
+sbApi.setKey(process.env.HYPIXELKEY)
+
+
 // Importing other files (functions, api fetching etc.)
 
 // Variables
 const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
 let err = "";
+let num = 0;
+// reaction variables
+const giveawayreaction = '<a:giveaway:831469774302740540>';
+const eventreaction = '<a:events:831469773602160702>';
+const announcementreaction = '<:announcement:831469769571434537>';
+const susreaction = '<a:SUS:831469774042300447>';
 
 // Mongoose variables
-mongoose.connect("mongodb://localhost:27017/tagDB", {useNewUrlParser: true, useCreateIndex: true,  useUnifiedTopology: true});
+mongoose.connect("mongodb://localhost:27017/tagDB", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
 mongoose.set("useCreateIndex", true);
 
 const tagSchema = new mongoose.Schema ({
@@ -27,32 +37,18 @@ const tagSchema = new mongoose.Schema ({
 const tags = new mongoose.model("Tags", tagSchema);
 
 // Embeds
-const verifyembed = new Discord.MessageEmbed()
-.setColor('#00ff10 ')
-.setTitle('Succesfully Verified!')
-.setDescription('')
-.setTimestamp()
-.setFooter('Sentencia Bot');
 
 const unverifiedembed = new Discord.MessageEmbed()
-.setColor('#00ff10 ')
+.setColor('#ff0000 ')
 .setTitle('Incorrect username')
 .setDescription("The username's discord you provided does not match with your own.")
 .addFields(
     { name: 'Take a look at our verify help guide', value: 'Type "verify help" for the guide!' }
 )
 .setTimestamp()
-.setFooter('Sentencia Bot');
+.setFooter('Sentencia Bot • Incorrect Username');
 
-const errorembed = new Discord.MessageEmbed()
-.setColor('#ff0000 ')
-.setTitle('Error!')
-.addFields(
-    { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
-)
-.setDescription('')
-.setTimestamp()
-.setFooter('Sentencia Bot • Error Handling');
+
 
 // Main code
 client.on('ready', () => {
@@ -77,25 +73,50 @@ const clean = text => {
 client.on("message", msg => {
     const args = msg.content.split(" ").slice(1);
     if (msg.content.startsWith(prefix + 'eval')) {
-        if (msg.author.id != process.env.DEVID) {
+        if (!msg.member.roles.cache.some((role) => role.name === '★ Developer')) {
             msg.channel.send('Invalid Permissions. I see you lmao')
-        };
-        try {
-        const code = args.join(" ");
-        let evaled = eval(code);
-
-        if (typeof evaled !== "string")
-            evaled = require("util").inspect(evaled);
-
-
-        } catch (err) {
-        msg.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
+        } else {
+            try {
+                const code = args.join(" ");
+                let evaled = eval(code);
+        
+                if (typeof evaled !== "string")
+                    evaled = require("util").inspect(evaled);
+            } catch (err) {
+            msg.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
+            }
         }
+
     }
     
 });
 
-// Main commands
+client.on("message", msg => {
+    if (msg.content == prefix + 'restart') {
+        if (!msg.member.roles.cache.some((role) => role.name === '★ Developer')) {
+            msg.channel.send('Invalid Permissions.')
+        } else {
+            msg.channel.send('Restarting...')
+            .then(setTimeout(() => process.exit(1), 2000)) // requires PM2 to restart
+           };  
+        }
+  
+});
+
+client.on("message", msg => {
+    if (msg.content == prefix + 'stop') {
+        if (!msg.member.roles.cache.some((role) => role.name === '★ Developer')) {
+            msg.channel.send('Insufficient Perms.')
+        } else {
+            msg.channel.send('Stopping bot...')
+            .then(setTimeout(() => process.exit(1), 2000))
+        }
+
+    }
+})
+
+
+/// Main commands
 
 // Verify commands
 
@@ -132,33 +153,55 @@ client.on("message", msg => {
             if (err) {
 
             } else {
-                try {
-                    axios.get("https://api.hypixel.net/guild?key=" + process.env.HYPIXELKEY + "&name=" + username)
-                    .then(res => {
-
-                    })         
+                try {       
                     axios.get("https://api.hypixel.net/player?key=" + process.env.HYPIXELKEY +  "&uuid=" + result[0].id)
                     .then(res => {
                         if (msg.author.tag == res.data.player.socialMedia.links.DISCORD) {
+                            const verifyembed = new Discord.MessageEmbed()
+                            .setColor('#00ff10 ')
+                            .setTitle('Succesfully Verified!')
+                            .setThumbnail('https://crafatar.com/avatars/' + result[0].id)
+                            .setDescription("You're now verified as `" + res.data.player.displayname + '`')
+                            .setTimestamp()
+                            .setFooter('Sentencia Bot');
+
                             msg.channel.send(verifyembed)
                             member.roles.add(verifiedRole)
                             member.setNickname(res.data.player.displayname);
+                            // msg.channel.send('**To verify your Discord account on our server, you must have it linked to Hypixel in the game, if you have it linked please use this command:**```s!verify username```')
                         } else {
                             msg.channel.send(unverifiedembed)
     
                         }
                     hypixelClient.findGuildByPlayer(result[0].id, (err, guildId) => { 
                         if (guildId == sentencia_id) {
-                            console.log('Sentencia Member!')
                             member.roles.add(sentenciaRole)
                         }
                         
                     });})
                     .catch(err => {
+                        const errorembed = new Discord.MessageEmbed()
+                        .setColor('#ff0000 ')
+                        .setTitle('Error!')
+                        .addFields(
+                            { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+                        )
+                        .setDescription('')
+                        .setTimestamp()
+                        .setFooter('Sentencia Bot • Error Handling');
                         msg.channel.send(errorembed)})
 
 
                 } catch {
+                    const errorembed = new Discord.MessageEmbed()
+                    .setColor('#ff0000 ')
+                    .setTitle('Error!')
+                    .addFields(
+                        { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+                    )
+                    .setDescription('')
+                    .setTimestamp()
+                    .setFooter('Sentencia Bot • Error Handling');
                     msg.channel.send(errorembed)
                 }
 
@@ -166,6 +209,21 @@ client.on("message", msg => {
             }
         });
 
+    }
+})
+
+client.on("message", msg => {
+    const { guild } = msg;
+    const verifiedRole = guild.roles.cache.find((role => role.name == 'Hypixel Verified'));
+    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Member'));
+    const member = guild.members.cache.get(msg.author.id);
+    if (msg.content.startsWith(prefix + 'unverify')) {
+        member.setNickname(msg.author.username)
+        .catch(err => msg.channel.send('An error occured! Please forward this to your local developer `' + err + '`'))
+        member.roles.remove(verifiedRole)
+        .then(member.roles.remove(sentenciaRole))
+        .then(msg.channel.send('Succesfully unverified. Please re-verify yourself.'))
+        .catch(err => msg.channel.send('An error occured! Please forward this to your local developer `' + err + '`'))
     }
 })
 
@@ -181,7 +239,6 @@ client.on('message', msg => {
             let tagcontentsplit = tagArgs.slice(2);
             let tagcontent = tagcontentsplit.join(' ')
             let tagtitle = tagtitlesplit.join(' ')
-            console.log(tagtitle + ' content: ' + tagcontent)
             const newTag = new tags({
                 tagName: tagtitle,
                 tagContent: tagcontent
@@ -189,28 +246,23 @@ client.on('message', msg => {
             newTag.save()
             .then(msg.channel.send('Your tag, ' + tagtitle + ', has been saved!'))
 
-    }
-        // Calling upon tag
-        try {
-            if (tagArgs[0] == 'call') {
-                tags.findOne({tagName: tagArgs[1]}, function (err, tag) {
-                    if (err) {
+    } else if (tagArgs[0] == 'call') {
+            tags.findOne({tagName: tagArgs[1]}, function (err, tag) {
+                if (err) {
 
-                        msg.channel.send(errorembed)
-                        
+                    msg.channel.send(errorembed)
+                    
+                } else {
+                    if (tag == null) {
+                        msg.channel.send('This tag does not exist!')
                     } else {
                         let tagObject = tag.toObject(); 
                         msg.channel.send(tagObject.tagContent)
+                        msg.delete(msg)
                     }
-                })
-            }
-        } catch (err) {
-            msg.channel.send(errorembed)
-        }
-
-        // Delete tag
-
-        if (tagArgs[0] == 'delete') {
+                }
+            })
+        } else if (tagArgs[0] == 'delete') {
             tags.deleteOne({tagName: tagArgs[1]}, function (err, tag) {
                 if (err) {
                     msg.channel.send(errorembed)
@@ -218,29 +270,74 @@ client.on('message', msg => {
                     msg.channel.send('Deleted the tag!')
                 }
             })
-        }
-
-        // List all tags
-
-        if (tagArgs[0] == 'all') {
-            tags.find({}, function (err, tags) {
-                // const alltags = new Discord.MessageEmbed()
-                // .setColor('#00B2EE ')
-                // .setTitle('All tags')
-                // for (tag in tags) {
-                //     {name: tags.tagName}
-                // }
-                
-                // .setTimestamp()
-                // .setFooter('Sentencia Bot');
-                console.log(tags[1])
-
+        } else if (tagArgs[0] == 'all') {
+            tags.find().lean()
+            .then(docs => {
+                num = 0;
+                let allTagsembed = new Discord.MessageEmbed()
+                .setColor('#00ff10 ')
+                .setTitle('All Tags')
+                for (amountoftags in docs) {
+                    let tagname = JSON.stringify(docs[num].tagName);
+                    tagname = tagname.substring(1,tagname.length-1)
+                    allTagsembed.addFields(
+                        {name: tagname,value: 'Tag #' + num}
+                    )
+                    num = num + 1
+                }
+                allTagsembed.setTimestamp()
+                allTagsembed.setFooter('Sentencia Bot');       
+                msg.channel.send(allTagsembed)
+            
             })
+
+            .catch(err => {errorembed = new Discord.MessageEmbed()
+            .setColor('#ff0000 ')
+            .setTitle('Error!')
+            .addFields(
+                { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+            )
+            .setDescription('')
+            .setTimestamp()
+            .setFooter('Sentencia Bot • Error Handling');
+            msg.channel.send(errorembed)})
+
+        } else if (tagArgs[0] == 'edit'){
+            tags.findOneAndUpdate({ tagName: tagArgs[1] }, { tagContent: tagArgs[2]})
+            .then(docs => {
+                if (docs == null) {
+                    msg.channel.send('This tag does not exist!')
+                } else {
+                    msg.channel.send('Updated ' + tagArgs[1] + '!')
+                }
+
+                
+        })
+            .catch(err => {errorembed = new Discord.MessageEmbed()
+            .setColor('#ff0000 ')
+            .setTitle('Error!')
+            .addFields(
+                { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+            )
+            .setDescription('')
+            .setTimestamp()
+            .setFooter('Sentencia Bot • Error Handling')
+            msg.channel.send(errorembed)})
+        } else {
+            let hasDoneBefore = false;
+            if (hasDoneBefore == false) {
+                msg.channel.send('s!tag call ' + tagArgs[0])
+                .then(msg.delete(msg))
+            };
         }
+
 
 
 
 }});
+
+
+
 
 // QoL commands
 
@@ -251,7 +348,7 @@ client.on('message', msg => {
     const member = guild.members.cache.get(msg.author.id)
     let rMember =
     msg.mentions.members.first() || // `.first()` is a function.
-    msg.guild.members.cache.find((m) => m.user.tag === roledmember) ||
+    msg.guild.members.cache.find((member) => member.user.tag === roledmember) ||
     msg.guild.members;
     try {
         if (msg.content.startsWith(prefix + 'guildrole')){
@@ -264,10 +361,66 @@ client.on('message', msg => {
             }
         }
     } catch (err) {
-        console.log(err)
+        const errorembed = new Discord.MessageEmbed()
+        .setColor('#ff0000')
+        .setTitle('Error!')
+        .addFields(
+            { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+        )
+        .setDescription('')
+        .setTimestamp()
+        .setFooter('Sentencia Bot • Error Handling');
+        msg.channel.send(errorembed) 
     }
    
 });
+
+// Requirement command
+
+client.on("message", msg => {
+    const username = msg.content.split(" ").slice(1);
+    if (msg.content.startsWith(prefix + 'greq')) {
+        MojangAPI.nameToUuid(username, function(err, result) {
+            sb.getProfiles(result[0].id, process.env.HYPIXELKEY)
+            .then(res => {
+                console.log(res.a6cbde05853a419a87066050db83f492)
+
+            })
+            .catch(err => console.log(err))
+        })
+
+    }
+});
+
+// WIP Commands
+
+// Auto Role
+
+
+
+// client.on("message", msg => {
+//     if (msg.content == prefix + 'autorole') {
+//         msg.channel.send('React with an emoji to get the corresponding roles! The roles in order: Announcement Ping, Giveaway Ping, Event Ping, sus (hover over reactions if unsure)')
+//         .then(msg => {
+//             msg.react(announcementreaction)
+//             msg.react(giveawayreaction)
+//             msg.react(eventreaction)
+//             msg.react(susreaction)
+//         })
+//         const reactionfilter = (reaction, user) => (reaction.emoji.name == announcementreaction || reaction.emoji.name == giveawayreaction || reaction.emoji.name == eventreaction || reaction.emoji.name == susreaction)
+//         msg.awaitReactions(reactionfilter, {time: 10000})
+//         .then(reactions => {
+//             console.log(reactions)
+//         })
+//     } 
+// })
+
+
+
+
+
+
+
 
 
 client.login(process.env.TOKEN); // Gets token from .env file (the last bit is the variable within .env)
