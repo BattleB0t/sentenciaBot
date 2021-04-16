@@ -25,8 +25,8 @@ const eventreaction = '<a:events:831469773602160702>';
 const announcementreaction = '<:announcement:831469769571434537>';
 const susreaction = '<a:SUS:831469774042300447>';
 
-// Mongoose variables
-mongoose.connect("mongodb://localhost:27017/tagDB", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
+ // Mongoose variables
+ mongoose.connect("mongodb+srv://Admin-Arahan:yvycdvf5cnkoqdB7@tagdb.leypg.mongodb.net/tagDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
 mongoose.set("useCreateIndex", true);
 
 const tagSchema = new mongoose.Schema ({
@@ -37,6 +37,22 @@ const tagSchema = new mongoose.Schema ({
 const tags = new mongoose.model("Tags", tagSchema);
 
 // Embeds
+
+
+const tagHelp = new Discord.MessageEmbed()
+            .setColor('#ED820E ')
+            .setTitle('Tag Help')
+            .setDescription('Here are all valid commands')
+            .addFields(
+                { name: 's!tag new (tag name) (tag content)', value: 'Creates a new tag' },
+                { name: 's!tag call (tag name)', value: 'Calls the tag name' },
+                { name: 's!tag edit (tag name) (edited tag content)', value: 'Edits your tag' },
+                { name: 's!tag (tag name)', value: 'Same as s!tag call, but just shorter' },
+                { name: 's!tag all', value: 'Shows all tags' }
+            )
+            .setTimestamp()
+            .setFooter('Sentencia Bot')
+
 
 const unverifiedembed = new Discord.MessageEmbed()
 .setColor('#ff0000 ')
@@ -225,7 +241,7 @@ client.on("message", msg => {
 client.on("message", msg => {
     const { guild } = msg;
     const verifiedRole = guild.roles.cache.find((role => role.name == 'Hypixel Verified'));
-    const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
+    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Guild: Sentencia Eternal'));
     const member = guild.members.cache.get(msg.author.id);
     if (msg.content.startsWith(prefix + 'unverify')) {
         member.setNickname(msg.author.username)
@@ -333,6 +349,10 @@ client.on('message', msg => {
             .setTimestamp()
             .setFooter('Sentencia Bot • Error Handling')
             msg.channel.send(errorembed)})
+        } else if (tagArgs == '') {
+            msg.channel.send(tagHelp)
+            
+            
         } else {
             let hasDoneBefore = false;
             if (hasDoneBefore == false) {
@@ -354,7 +374,7 @@ client.on('message', msg => {
 client.on('message', msg => {
     const roledmember = msg.content.split(" ").slice(1);
     const { guild } = msg;
-    const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
+    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Member'));
     const member = guild.members.cache.get(msg.author.id)
     let rMember =
     msg.mentions.members.first() || // `.first()` is a function.
