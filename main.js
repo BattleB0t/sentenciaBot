@@ -26,7 +26,7 @@ const announcementreaction = '<:announcement:831469769571434537>';
 const susreaction = '<a:SUS:831469774042300447>';
 
  // Mongoose variables
- mongoose.connect("mongodb+srv://Admin-Arahan:yvycdvf5cnkoqdB7@tagdb.leypg.mongodb.net/tagDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
+ mongoose.connect("mongodb+srv://Admin-Arahan:" + process.env.MONGOKEY + "@tagdb.leypg.mongodb.net/tagDB?retryWrites=true&w=majority", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
 mongoose.set("useCreateIndex", true);
 
 const tagSchema = new mongoose.Schema ({
