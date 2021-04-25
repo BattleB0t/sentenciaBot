@@ -9,6 +9,7 @@ mongoose
 hy-profile
 hypixel-api-wrapper
 pm2
+discord.js-pagination
 
 You can install these via:
 

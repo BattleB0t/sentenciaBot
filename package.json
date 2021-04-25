@@ -12,11 +12,11 @@
   "license": "ISC",
   "dependencies": {
     "@zikeji/hypixel": "^3.1.1",
-    "axios": "github:axios/axios",
+    "axios": "^0.21.1",
     "discord.js": "^12.5.3",
+    "discord.js-pagination": "^1.0.3",
     "dotenv": "^8.2.0",
     "got": "^11.8.2",
-    "hy-profile": "^1.2.2",
     "hypixel": "^1.0.3",
     "hypixel-api-wrapper": "^1.0.3",
     "mojang-api": "^0.0.2",
