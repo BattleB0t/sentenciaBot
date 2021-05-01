@@ -2,6 +2,7 @@
 require('dotenv').config() // .env file configuration
 const Discord = require('discord.js'); //
 const Hypixel = require('hypixel');
+const hyp = require('hy-profile')
 let prefix = 's!'; // Prefix for bot
 const MojangAPI = require('mojang-api');
 const axios = require('axios');
@@ -28,6 +29,7 @@ const {tagHelp,guildroleHelp,verifyHelp,succesfullyunverifiedembed,wrongusername
 // Variables
 const sentencia_id = "5f9c9c7a8ea8c992ddb8cd67"
 const inferior_id = "5ec3449f8ea8c93479da1423"
+const legend_id = "6085b5f78ea8c9849e3f89d7"
 let err = "";
 let inGuild = true;
 let num = 0;
@@ -65,6 +67,56 @@ const suggestionSchema = new mongoose.Schema ({
 
 const suggestions = new mongoose.model('Suggestions', suggestionSchema)
 
+// Functions
+
+async function greq(membersChosen, res, profilenum) {
+    let reachesCata = '✅'
+    let reachesSlayer = '✅'
+    let reachesSkill = '✅'
+    let cata = membersChosen.dungeons.dungeon_types.catacombs.experience
+    let slayer = membersChosen.slayer.zombie.xp + membersChosen.slayer.spider.xp + membersChosen.slayer.wolf.xp
+    try {
+        let skills = membersChosen.skills.combat.level + membersChosen.skills.mining.level + membersChosen.skills.alchemy.level + membersChosen.skills.farming.level + membersChosen.skills.taming.level + membersChosen.skills.enchanting.level + membersChosen.skills.fishing.level + membersChosen.skills.foraging.level
+        skills = skills / 8
+        if (skills < 26) {
+            reachesSkill = '❌'
+        }
+    } catch (e) {
+        let skills = 0
+        reachesSkill = '❌'
+    }
+
+    if (cata == '') {
+        reachesCata = '❌'
+    } else if (cata == undefined) {
+        reachesCata = '❌'
+    }
+    if (cata < 70040) {
+        reachesCata = '❌'
+    } 
+    if (slayer < 60000){
+        reachesSlayer = '❌'
+    }
+
+    let eternalReqsEmbed = new Discord.MessageEmbed()
+    .setColor('#ED820E ')
+    .setTitle(`Does ${membersChosen.player.username} meet the requirements?`)
+    .setDescription('')
+    .addFields(
+        { name: '26+ Skill Average', value: reachesSkill, inline: true },
+        { name: '60k+ Slayer XP', value: reachesSlayer, inline: true },
+        { name: 'Catacombs level 18+', value: reachesCata, inline: true},
+        { name: 'Profile: ', value: res.data.cute_name, inline: true}
+        // ✅ ❌
+    )
+    .setTimestamp()
+    .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+    .setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+    return eternalReqsEmbed;
+
+
+    
+}
 
 // Main code
 client.on('ready', () => {
@@ -166,8 +218,9 @@ client.on("message", msg => {
     username = username.map(args => args.toLowerCase())
     let authorID = msg.author.id
     const { guild } = msg;
-    const verifiedRole = guild.roles.cache.find((role => role.name == 'Hypixel Verified'));
-    const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Eternal'));
+    const verifiedRole = guild.roles.cache.find((role => role.id == '830185985400373278'));
+    const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
+    const legendrole = guild.roles.cache.find((role => role.id === '835968069741838357'))
     const inferiorrole = guild.roles.cache.find((role => role.id === '833538348135481344'));
     const viprole = guild.roles.cache.find((role => role.id == '830219786196746241'));
     const vipplusrole = guild.roles.cache.find((role => role.id == '830219785689104434'));
@@ -326,6 +379,8 @@ client.on("message", msg => {
                                         member.roles.add(sentenciaRole)
                                     } else if (guildId == inferior_id) {
                                         member.roles.add(inferiorrole)
+                                    } else if (guildId == legend_id) {
+                                        member.roles.add(legendrole)
                                     }
         
                                 });
@@ -531,9 +586,124 @@ client.on('message', msg => {
 
 // Requirement command
 
+// client.on("message", msg => {
+//     let username = msg.content.split(" ").slice(1);
+//     if (msg.content.startsWith(prefix + 'greq')) {
+//         if (username[1] == '') {
+//             msg.channel.send(greqHelp)
+//         } else if (username[0] == '') {
+//             msg.channel.send(greqHelp)
+//         } else if (username == '') {
+//             msg.channel.send(greqHelp)
+//         } else {
+//             MojangAPI.nameToUuid(username, function(err, result) {
+//                 if (result == '') {
+//                     msg.channel.send('This user does not exist!')
+//                 } else {
+//                     axios.get('https://api.slothpixel.me/api/skyblock/profile/' + result[0].id)
+//                     .then(res => {
+//                         axios.get('https://sky.shiiyu.moe/api/v2/profile/' + result[0].id)
+//                         .then(resu => {
+//                             let profilename = ''
+//                             if (username[1] == '') {
+//                                 profilename = ''
+//                             } else {
+//                                 profilename = username[1]
+//                             }
+        
+//                             axios.get(`https://api.slothpixel.me/api/skyblock/profile/${result[0].id}/${profilename}`)
+//                             .then(profileres => {
+//                                 const profileid = profileres.id
+//                                 axios.get('https://sky.shiiyu.moe/api/v2/profile/' + profileid)
+//                                 .then(res => {
+//                                     const prof = Object.values(res.data.profiles)[0]
+//                                     // console.log(prof)
+//                                     // let zombiexp = prof.raw.slayer_bosses.zombie.xp
+//                                     // let taraxp = prof.raw.slayer_bosses.spider.xp
+//                                     // let svenxp = prof.raw.slayer_bosses.wolf.xp
+//                                     const slayerxp = prof.data.slayer_xp
+//                                     let reachesSlayer = true;
+//                                     let slayer = '✅'
+//                                     if (slayerxp < 60000) {
+//                                         reachesSlayer = false;
+//                                         slayer = '❌'
+//                                     }
+//                                     // Dungeons now
+//                                     const cataxp = prof.raw.dungeons.dungeon_types.catacombs.experience
+//                                     let reachesCata = true;
+//                                     let cata = '✅'
+//                                     if (cataxp < 70040) {
+//                                         reachesCata = false
+//                                         cata = '❌'
+//                                     }
+//                                     const skill = prof.data.average_level_no_progress
+//                                     // console.log(prof)
+//                                     let reachesSkill = true;
+//                                     skillav = '✅'
+//                                     if (skill < 25) {
+//                                         reachesSkill = false;
+//                                         skillav = '❌'
+//                                     }
+
+//                                     // Checking if they have even reached the area
+
+//                                     if (prof.raw.dungeons.dungeon_types.catacombs == '') {
+//                                         reachesCata = false;
+//                                         cata = '❌';
+//                                     }
+//                                     let eternalReqsEmbed = new Discord.MessageEmbed()
+//                                     .setColor('#ED820E ')
+//                                     .setTitle(`Does ${prof.data.display_name} meet the requirements?`)
+//                                     .setDescription('')
+//                                     .addFields(
+//                                         { name: '26+ Skill Average', value: skillav, inline: true },
+//                                         { name: '60k+ Slayer XP', value: slayer, inline: true },
+//                                         { name: 'Catacombs level 18+', value: cata, inline: true},
+//                                         { name: 'Profile: ', value: prof.cute_name, inline: true}
+//                                         // ✅ ❌
+//                                     )
+//                                     .setTimestamp()
+//                                     .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+//                                     .setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+//                                     msg.channel.send(eternalReqsEmbed)
+        
+//                                 })
+//                             .catch(error => msg.channel.send(error))
+        
+//                             })
+//                             .catch(err => {
+//                                 msg.channel.send(err)
+//                             })
+//                         })
+        
+                        
+//                     })
+//                     .catch(err => {
+//                         if (err.response.status == 520) {
+//                             msg.channel.send('There is an API error!')
+//                         } else if (err.response.status == 524) {
+//                             msg.channel.send('There is an API error!')
+//                         }else {
+//                             msg.channel.send('This user does not play skyblock!')
+
+//                         }
+//                     })
+//                 }
+
+//             })
+
+//         }
+        
+
+
+
+//     }
+// });
+
 client.on("message", msg => {
     let username = msg.content.split(" ").slice(1);
     if (msg.content.startsWith(prefix + 'greq')) {
+        let profilenum = 0;
         if (username[1] == '') {
             msg.channel.send(greqHelp)
         } else if (username[0] == '') {
@@ -545,99 +715,171 @@ client.on("message", msg => {
                 if (result == '') {
                     msg.channel.send('This user does not exist!')
                 } else {
-                    axios.get('https://api.slothpixel.me/api/skyblock/profile/' + result[0].id)
-                    .then(res => {
-                        axios.get('https://sky.shiiyu.moe/api/v2/profile/' + result[0].id)
-                        .then(resu => {
-                            let profilename = ''
-                            if (username[1] == '') {
-                                profilename = ''
+                    let uuid = result[0].id
+                    axios.get(`https://api.slothpixel.me/api/skyblock/profiles/${username}`) // Gets profiles to get the IDs
+                    .then(profileids => {
+                        let profile = Object.values(profileids.data)  // Gets the first profile ID
+                        let allProfiles = Object.keys(profileids.data)
+                        let chosenprofile = allProfiles[0]  // the choosing of profiles!!!
+                        axios.get(`https://api.slothpixel.me/api/skyblock/profile/${username}/${chosenprofile}`)
+                        .then(res => {
+                            let members = res.data.members
+                            let membersChosen = Object.values(members)[0]
+                            if (membersChosen.uuid != uuid) {
+                                membersChosen = Object.values(members)[1]
+                                if (membersChosen.uuid != uuid) {
+                                    membersChosen = Object.values(members)[2]
+                                    if (membersChosen.uuid != uuid) {
+                                        membersChosen = Object.values(members)[3]
+                                        if (membersChosen.uuid != uuid) {
+                                            membersChosen = Object.values(members)[4]
+                                            if (membersChosen.uuid != uuid) {
+                                                membersChosen = Object.values(members)[5]
+                                            } else {
+                                                greq(membersChosen, res, profilenum)
+                                                .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                                .then(message => {
+                                                    message.react('🔄')
+                                                    const filter = (reaction, user) => {
+                                                        return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                                    };
+                                                    
+                                                    const collector = message.createReactionCollector(filter, { time: 15000 });
+                                                    
+                                                    collector.on('collect', (reaction, user) => {
+                                                        profilenum = profilenum + 1
+                                                        msg.channel.send('Change Profile logic')
+                                                    });
+                                                });
+                                                
+                                            }
+                                        } else {
+                                            greq(membersChosen, res, profilenum)
+                                            .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                            .then(message => {
+                                                message.react('🔄')
+                                                const filter = (reaction, user) => {
+                                                    return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                                };
+                                                
+                                                const collector = message.createReactionCollector(filter, { time: 15000 });
+                                                
+                                                collector.on('collect', (reaction, user) => {
+                                                    profilenum = profilenum + 1
+                                                    msg.channel.send('Change Profile logic')
+                                                });
+                                            });
+                                            
+                                        }
+
+                                    } else {
+                                        greq(membersChosen, res, profilenum)
+                                        .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                        .then(message => {
+                                            message.react('🔄')
+                                            const filter = (reaction, user) => {
+                                                return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                            };
+                                            
+                                            const collector = message.createReactionCollector(filter, { time: 15000 });
+                                            
+                                            collector.on('collect', (reaction, user) => {
+                                                profilenum = profilenum + 1
+                                                msg.channel.send('Change Profile logic')
+                                            });
+                                        });
+                                    }
+                                } else {
+                                    greq(membersChosen, res, profilenum)
+                                    .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                    .then(message => {
+                                        message.react('🔄')
+                                        const filter = (reaction, user) => {
+                                            return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                        };
+                                        
+                                        const collector = message.createReactionCollector(filter, { time: 15000 });
+                                        
+                                        collector.on('collect', (reaction, user) => {
+                                            profilenum = profilenum + 1
+                                            msg.channel.send('Change Profile logic')
+                                        });
+                                    });
+
+                                    
+                                }
                             } else {
-                                profilename = username[1]
+                                greq(membersChosen, res, profilenum)
+                                    .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                    .then(message => {
+                                        message.react('🔄')
+                                        const filter = (reaction, user) => {
+                                            return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                        };
+                                        
+                                        const collector = message.createReactionCollector(filter, { time: 15000 });
+                                        
+                                        collector.on('collect', (reaction, user) => {
+                                            profilenum = profilenum + 1
+                                            greq(membersChosen, res, profilenum)
+                                            .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                            .then(message => {
+                                                message.react('🔄')
+                                                const filter = (reaction, user) => {
+                                                    return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                                };
+                                                
+                                                const collector = message.createReactionCollector(filter, { time: 15000 });
+                                                
+                                                collector.on('collect', (reaction, user) => {
+                                                    profilenum = profilenum + 1
+                                                    greq(membersChosen, res, profilenum)
+                                                    .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                                    .then(message => {
+                                                        message.react('🔄')
+                                                        const filter = (reaction, user) => {
+                                                            return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                                        };
+                                                        
+                                                        const collector = message.createReactionCollector(filter, { time: 15000 });
+                                                        
+                                                        collector.on('collect', (reaction, user) => {
+                                                            profilenum = profilenum + 1
+                                                            greq(membersChosen, res, profilenum)
+                                                            .then(eternalReqsEmbed => msg.channel.send(eternalReqsEmbed))
+                                                            .then(message => {
+                                                                message.react('🔄')
+                                                                const filter = (reaction, user) => {
+                                                                    return reaction.emoji.name === '🔄' && user.id === msg.author.id;
+                                                                };
+                                                                
+                                                                const collector = message.createReactionCollector(filter, { time: 15000 });
+                                                                
+                                                                collector.on('collect', (reaction, user) => {
+                                                                    profilenum = profilenum + 1
+                                                                    msg.channel.send('Change Profile logic')
+                                                                });
+                                                            });
+                                                            msg.channel.send('Change Profile logic')
+                                                        });
+                                                    });
+
+                                                    msg.channel.send('Change Profile logic')
+                                                });
+                                            });
+                                            msg.channel.send('Change Profile logic')
+                                        });
+                                    });
+                                
                             }
-        
-                            axios.get(`https://api.slothpixel.me/api/skyblock/profile/${result[0].id}/${profilename}`)
-                            .then(profileres => {
-                                const profileid = profileres.id
-                                axios.get('https://sky.shiiyu.moe/api/v2/profile/' + profileid)
-                                .then(res => {
-                                    const prof = Object.values(res.data.profiles)[0]
-                                    // console.log(prof)
-                                    // let zombiexp = prof.raw.slayer_bosses.zombie.xp
-                                    // let taraxp = prof.raw.slayer_bosses.spider.xp
-                                    // let svenxp = prof.raw.slayer_bosses.wolf.xp
-                                    const slayerxp = prof.data.slayer_xp
-                                    let reachesSlayer = true;
-                                    let slayer = '✅'
-                                    if (slayerxp < 60000) {
-                                        reachesSlayer = false;
-                                        slayer = '❌'
-                                    }
-                                    // Dungeons now
-                                    const cataxp = prof.raw.dungeons.dungeon_types.catacombs.experience
-                                    let reachesCata = true;
-                                    let cata = '✅'
-                                    if (cataxp < 70040) {
-                                        reachesCata = false
-                                        cata = '❌'
-                                    }
-                                    const skill = prof.data.average_level_no_progress
-                                    // console.log(prof)
-                                    let reachesSkill = true;
-                                    skillav = '✅'
-                                    if (skill < 25) {
-                                        reachesSkill = false;
-                                        skillav = '❌'
-                                    }
 
-                                    // Checking if they have even reached the area
 
-                                    if (prof.raw.dungeons.dungeon_types.catacombs == '') {
-                                        reachesCata = false;
-                                        cata = '❌';
-                                    }
-                                    let eternalReqsEmbed = new Discord.MessageEmbed()
-                                    .setColor('#ED820E ')
-                                    .setTitle(`Does ${prof.data.display_name} meet the requirements?`)
-                                    .setDescription('')
-                                    .addFields(
-                                        { name: '26+ Skill Average', value: skillav, inline: true },
-                                        { name: '60k+ Slayer XP', value: slayer, inline: true },
-                                        { name: 'Catacombs level 18+', value: cata, inline: true},
-                                        { name: 'Profile: ', value: prof.cute_name, inline: true}
-                                        // ✅ ❌
-                                    )
-                                    .setTimestamp()
-                                    .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
-                                    .setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
-                                    msg.channel.send(eternalReqsEmbed)
-        
-                                })
-                            .catch(error => msg.channel.send(error))
-        
-                            })
-                            .catch(err => {
-                                msg.channel.send(err)
-                            })
                         })
-        
-                        
+
                     })
-                    .catch(err => {
-                        if (err.response.status == 520) {
-                            msg.channel.send('There is an API error!')
-                        } else if (err.response.status == 524) {
-                            msg.channel.send('There is an API error!')
-                        }else {
-                            msg.channel.send('This user does not play skyblock!')
 
-                        }
-                    })
-                }
-
-            })
-
-        }
+                }});
+            };
         
 
 
@@ -653,7 +895,8 @@ client.on('message', msg => {
     args = args.map(arg => arg.toLowerCase())
     const { guild } = msg;
     const sentenciaRole = guild.roles.cache.find((role => role.name == 'Sentencia Eternal'));
-    const inferiorrole = guild.roles.cache.find((role => role.id === '833538348135481344'))
+    const inferiorrole = guild.roles.cache.find((role => role.id === '833538348135481344'));
+    const legendrole = guild.roles.cache.find((role => role.id === '835968069741838357'))
     const member = guild.members.cache.get(msg.author.id)
     let rMember =
     msg.mentions.members.first() // `.first()` is a function.
@@ -661,6 +904,12 @@ client.on('message', msg => {
         if (msg.content.startsWith(prefix + 'guildrole')){
             if (args[0] == 'e') {
                 if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(legendrole)) { 
+                        msg.roles.remove(legendrole)
+                    } else if (msg.member.roles.cache.has(inferiorrole)) {
+                        msg.roles.remove(inferiorrole)
+                        
+                    }
                     rMember.roles.add(sentenciaRole)
                     .then(msg.channel.send('Added role succesfully!'))
                     .catch(err => msg.channel.send('We have an error! ' + err))
@@ -669,6 +918,12 @@ client.on('message', msg => {
                 }
             } else if (args[0] == 'i') {
                 if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(legendrole)) { 
+                        msg.roles.remove(legendrole)
+                    } else if (msg.member.roles.cache.has(sentenciaRole)) {
+                        msg.roles.remove(sentenciaRole)
+                        
+                    }
                     rMember.roles.add(inferiorrole)
                     .then(msg.channel.send('Added role succesfully!'))
                     .catch(err => msg.channel.send('We have an error! ' + err))
@@ -677,6 +932,12 @@ client.on('message', msg => {
                 }
             } else if (args[0] == 'eternal') {
                 if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(legendrole)) { 
+                        msg.roles.remove(legendrole)
+                    } else if (msg.member.roles.cache.has(inferiorrole)) {
+                        msg.roles.remove(inferiorrole)
+                        
+                    }
                     rMember.roles.add(sentenciaRole)
                     .then(msg.channel.send('Added role succesfully!'))
                     .catch(err => msg.channel.send('We have an error! ' + err))
@@ -685,6 +946,12 @@ client.on('message', msg => {
                 }
             } else if (args[0] == 'inferior') {
                 if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(legendrole)) { 
+                        msg.roles.remove(legendrole)
+                    } else if (msg.member.roles.cache.has(sentenciaRole)) {
+                        msg.roles.remove(sentenciaRole)
+                        
+                    }
                     rMember.roles.add(inferiorrole)
                     .then(msg.channel.send('Added role succesfully!'))
                     .catch(err => msg.channel.send('We have an error! ' + err))
@@ -692,7 +959,36 @@ client.on('message', msg => {
                     msg.channel.send('Invalid permissions. I see you ;)')
                 }
                 
-            } else {
+            } else if (args[0] == 'l'){
+                if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(inferiorrole)) { 
+                        msg.roles.remove(inferiorrole)
+                    } else if (msg.member.roles.cache.has(sentenciaRole)) {
+                        msg.roles.remove(sentenciaRole)
+                        
+                    }
+                    rMember.roles.add(legendrole)
+                    .then(msg.channel.send('Added role succesfully!'))
+                    .catch(err => msg.channel.send('We have an error! ' + err))
+                } else {
+                    msg.channel.send('Invalid permissions. I see you ;)')
+                }
+
+            } else if (args [0] == 'legend') {
+                if (msg.member.roles.cache.has('830600208760176701')) {
+                    if (msg.member.roles.cache.has(inferiorrole)) { 
+                        msg.roles.remove(inferiorrole)
+                    } else if (msg.member.roles.cache.has(sentenciaRole)) {
+                        msg.roles.remove(sentenciaRole)
+                        
+                    }
+                    rMember.roles.add(legendrole)
+                    .then(msg.channel.send('Added role succesfully!'))
+                    .catch(err => msg.channel.send('We have an error! ' + err))
+                } else {
+                    msg.channel.send('Invalid permissions. I see you ;)')
+                }
+            }else {
                 msg.channel.send(guildroleHelp)
             }
         }
@@ -712,6 +1008,9 @@ client.on('message', msg => {
     }
 
 });
+
+
+
 
 
 
@@ -757,30 +1056,40 @@ client.on("message", msg => {
                             // console.log(messages.embeds[0].fields[0].name)
                             messages.embeds[0].fields[0].name = 'Suggestion: Denied!'
                             // console.log(console.log(messages.embeds[0].fields[0].name))
-                            for (amountofargs in args) {
-                                if (hasShifted == false) {
-                                    args.shift()
-                                    hasShifted = true;
-                                } else {
-                                    // args = args.toString()
-                                    args.shift()
-                                    deniedReason = args.join(' ')
+                            if (args[2] == undefined) {
+                                deniedReason = 'no reason specified'
+                            } else {
+                                for (amountofargs in args) {
+                                    if (hasShifted == false) {
+                                        args.shift()
+                                        hasShifted = true;
+                                    } else {
+                                        // args = args.toString()
+                                        if (hasShifted == true) {
+                                            args.shift()
+                                            deniedReason = args.join(' ')
+                                            hasShifted = 'Inapplicable now'
+                                            const deniedSuggestion = new Discord.MessageEmbed()
+                                        .setColor('RED')
+                                        .setAuthor('SENTENCIA | Skyblock Guild')
+                                        .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+                                        .addFields(
+                                            { name: 'Sent by:', value: msg.author.username},
+                                            { name: 'Suggestion:', value: res.suggestion},
+                                            { name: 'Status:', value: '*DENIED* by ' + msg.author.username},
+                                            { name: 'Reason: ', value: deniedReason}
+                                        )
+                                        .setTimestamp()
+                                        .setFooter('Sentencia Bot - Suggestion ID #' + res.suggestionnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+                                        messages.edit(deniedSuggestion);
+                                        messages.reactions.removeAll();
+                                        msg.channel.send('Denied Suggestion!');
+                                    }
                                 }
+
                             }
-                            const deniedSuggestion = new Discord.MessageEmbed()
-                            .setColor('RED')
-                            .setAuthor('SENTENCIA | Skyblock Guild')
-                            .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
-                            .setTitle(`Suggestion: Denied`)
-                            .addFields(
-                                { name: 'Suggestion:', value: res.suggestion},
-                                { name: 'Denied for: ', value: deniedReason}
-                            )
-                            .setTimestamp()
-                            .setFooter('Sentencia Bot - Suggestion ID #' + res.suggestionnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
-                            messages.edit(deniedSuggestion)
-                            msg.channel.send('Denied Suggestion!')
-                        });
+
+                        }});
                     }
                 });
 
@@ -807,29 +1116,40 @@ client.on("message", msg => {
                             // console.log(messages.embeds[0].fields[0].name)
                             messages.embeds[0].fields[0].name = 'Suggestion: Accepted!'
                             // console.log(console.log(messages.embeds[0].fields[0].name))
-                            for (amountofargs in args) {
-                                if (hasShifted == false) {
-                                    args.shift()
-                                    hasShifted = true;
-                                } else {
-                                    // args = args.toString()
-                                    args.shift()
-                                    acceptedReason = args.join(' ')
+                            if (args[2] == undefined) {
+                                acceptedReason = 'No reason specificed'
+                            } else {
+                                for (amountofargs in args) {
+                                    if (hasShifted == false) {
+                                        args.shift()
+                                        hasShifted = true;
+                                    } else {
+                                        // args = args.toString()
+                                        if (hasShifted == true) {
+                                            args.shift()
+                                            acceptedReason = args.join(' ')
+                                            hasShifted = 'Inapplicable now'
+                                            const acceptedSuggestion = new Discord.MessageEmbed()
+                                            .setColor('GREEN')
+                                            .setAuthor('SENTENCIA | Skyblock Guild')
+                                            .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+                                            .addFields(
+                                                { name: 'Sent by:', value: msg.author.username},
+                                                { name: 'Suggestion:', value: res.suggestion},
+                                                { name: 'Status:', value: '*ACCEPTED* by ' + msg.author.username},
+                                                { name: 'Reason: ', value: acceptedReason}
+                                            )
+                                            .setTimestamp()
+                                            .setFooter('Sentencia Bot - Suggestion ID #' + res.suggestionnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+                                            messages.edit(acceptedSuggestion);
+                                            messages.reactions.removeAll();
+                                            msg.channel.send('Accepted Suggestion!');
+                                        }
+
+                                    }
                                 }
                             }
-                            const acceptedSuggestion = new Discord.MessageEmbed()
-                            .setColor('GREEN')
-                            .setAuthor('SENTENCIA | Skyblock Guild')
-                            .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
-                            .setTitle(`Suggestion: Accepted`)
-                            .addFields(
-                                { name: 'Suggestion:', value: res.suggestion},
-                                { name: 'Accepted for: ', value: acceptedReason}
-                            )
-                            .setTimestamp()
-                            .setFooter('Sentencia Bot - Suggestion ID #' + res.suggestionnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
-                            messages.edit(acceptedSuggestion)
-                            msg.channel.send('Accepted Suggestion!')
+
                         });
                     }
                 })
@@ -841,19 +1161,24 @@ client.on("message", msg => {
         } else if (args[0] == 'delete') {
             if (msg.member.roles.cache.has('812691760425598986')) {
                 suggestions.findOne({suggestionnum:args[1]}, function(err, res) {
-                    suggestions.deleteOne({suggestionnum:args[1]}, function(err, result) { 
-                        if (err) {
-                            msg.channel.send('There was an error deleting this from our database!')
-                        }
-        
-                    })
-                    // console.log(res.msgid)
-                    client.channels.cache.get("755059507041665166").messages.fetch(res.msgid)
-                    .then(messages => {
-                        messages.delete()
-                        msg.channel.send('Deleted the suggestion!')
-        
-                    })
+                    if (res == undefined) {
+                        msg.channel.send('This suggestion does not exist!')
+                    } else {
+                        suggestions.deleteOne({suggestionnum:args[1]}, function(err, result) { 
+                            if (err) {
+                                msg.channel.send('There was an error deleting this from our database!')
+                            }
+            
+                        })
+                        // console.log(res.msgid)
+                        client.channels.cache.get("755059507041665166").messages.fetch(res.msgid)
+                        .then(messages => {
+                            messages.delete()
+                            msg.channel.send('Deleted the suggestion!')
+            
+                        })
+                    }
+
                 })    
 
             } else {
@@ -871,34 +1196,48 @@ client.on("message", msg => {
             } else if (args[0] == '@here') {
                 msg.channel.send('No.')
             } else {
-                args = args.join(" ")
-                sugnum = sugnum + 1
-                const suggestionEmbed = new Discord.MessageEmbed()
-                .setColor('GREEN')
-                .setAuthor('SENTENCIA | Skyblock Guild')
-                .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
-                .setTitle(`Suggestion by ${msg.author.username}`)
-                .addFields(
-                    { name: 'Suggestion:', value: args}
-                )
-                .setTimestamp()
-                .setFooter('Sentencia Bot - Suggestion ID #' + sugnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
-                client.channels.cache.get('755059507041665166').send(suggestionEmbed)
-                .then(msg => {
-                    msg.react('✅')
-                    msg.react('❌')
-                    const dbsuggestion = new suggestions({
-                        suggestionnum: sugnum,
-                        suggestion: args,
-                        msgid: msg.id
-                    })
+                suggestions.findOne().sort({$natural: -1}).limit(1).exec(function(err, res){
+                    if (res == null) {
+                        let sugnum = 0
+                    } else {
+                        let sugnum = res.suggestionnum
+                    }
+                    if(err){
+                        msg.channel.send('There was an error!' + err)
+                    }
+                    else{
+                        args = args.join(" ")
+                        sugnum = sugnum + 1
+                        const suggestionEmbed = new Discord.MessageEmbed()
+                        .setColor('GREEN')
+                        .setAuthor('SENTENCIA | Skyblock Guild')
+                        .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+                        .addFields(
+                            { name: 'Sent by:', value: msg.author.username},
+                            { name: 'Suggestion:', value: args},
+                            { name: 'Status:', value: 'To be accepted/denied'}
+                        )
+                        .setTimestamp()
+                        .setFooter('Sentencia Bot - Suggestion ID #' + sugnum, 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+                        client.channels.cache.get('755059507041665166').send(suggestionEmbed)
+                        .then(msg => {
+                            msg.react('✅')
+                            msg.react('❌')
+                            const dbsuggestion = new suggestions({
+                                suggestionnum: sugnum,
+                                suggestion: args,
+                                msgid: msg.id
+                            })
+                
+                            dbsuggestion.save()
+                            
+                        })
+            
         
-                    dbsuggestion.save()
-                    
+                        msg.channel.send('Suggestion Sent!')
+                    }
                 })
-    
 
-                msg.channel.send('Suggestion Sent!')
     
             }
         }
@@ -907,6 +1246,15 @@ client.on("message", msg => {
 
     }
 });
+
+// Testing stuff cmd below
+
+// client.on('message', msg => {
+//     if (msg.content.startsWith(prefix + 'e')) {
+//         hyp.getProfiles('5a8b1b90ccec48a4a5d536f731c5f926', process.env.HYPIXELKEY).then(console.log)
+
+//     }
+// })
 
 client.on('messageDelete', msg => {
     client.snipes.set(msg.channel.id, {
@@ -941,6 +1289,7 @@ client.on("message", msg => {
         const { guild } = msg;
         const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
         const inferiorrole = guild.roles.cache.find((role => role.id === '833538348135481344'));
+        const legendrole = guild.roles.cache.find((role => role.id === '835968069741838357'));
         const viprole = guild.roles.cache.find((role => role.id == '830219786196746241'));
         const vipplusrole = guild.roles.cache.find((role => role.id == '830219785689104434'));
         const mvprole = guild.roles.cache.find((role => role.id == '830219785089450014'));
@@ -975,6 +1324,9 @@ client.on("message", msg => {
                     } else if (res.data.id == inferior_id) {
                         member.roles.add(inferiorrole)
                         msg.channel.send('Synced your account with the corresponding roles!')
+                    } else if (res.data.id == legend_id) {
+                        member.roles.add(legendrole)
+                        msg.channel.send('Synced your account with the corresponding roles!')
                     }
                 } else {
                     msg.channel.send('Please verify using `s!verify` before using this command!')
@@ -989,6 +1341,81 @@ client.on("message", msg => {
 
     }
 });
+
+client.on("message", msg => {
+    if (msg.content.startsWith(prefix + 'skycrypt')) {
+        let args = msg.content.split(" ").slice(1);
+        if (args[0] == '') {
+            msg.channel.send('Enter a username and a profile (optional) afterwards!')
+        } else {
+            let profile = args[1]
+            if (profile == '') {
+                msg.channel.send(`The skycrypt link is https://sky.shiiyu.moe/stats/${args[0]}/`)
+            } else {
+                msg.channel.send(`The skycrypt link is https://sky.shiiyu.moe/stats/${args[0]}/${args[1]}`)
+            }
+
+
+        }
+
+    }
+})
+
+
+// client.on("message", msg => {
+//     if (msg.content.startsWith(prefix + 'forcesync')) {
+//         let args = msg.content.split(" ").slice(1);
+//         const { guild } = msg;
+//         const sentenciaRole = guild.roles.cache.find((role => role.id == '829850153476816907'));
+//         const inferiorrole = guild.roles.cache.find((role => role.id === '833538348135481344'));
+//         const viprole = guild.roles.cache.find((role => role.id == '830219786196746241'));
+//         const vipplusrole = guild.roles.cache.find((role => role.id == '830219785689104434'));
+//         const mvprole = guild.roles.cache.find((role => role.id == '830219785089450014'));
+//         const mvpplusrole = guild.roles.cache.find((role => role.id == '830219784506703922'));
+//         const mvpplusplusrole = guild.roles.cache.find((role => role.id == '830219784020033596'));
+//         const member = guild.members.cache.get(msg.author.id)
+//         // Rank Checking
+//         axios.get('https://api.slothpixel.me/api/players/' + args[0])
+//         .then(res => {
+//             if (msg.member.roles.cache.has('830185985400373278')) {
+//                 let rank = res.data.rank
+//                 if (rank == 'VIP') {
+//                     member.roles.add(viprole)
+//                 } else if (rank == 'VIP_PLUS') {
+//                     member.roles.add(vipplusrole)
+//                 } else if (rank == 'MVP') {
+//                     member.roles.add(mvprole)
+//                 } else if (rank == 'MVP_PLUS') {
+//                     member.roles.add(mvpplusrole)
+//                 } else if (rank == 'MVP_PLUS_PLUS') {
+//                     member.roles.add(mvpplusplusrole)
+//                 } 
+//             } else {
+//                 msg.channel.send('Please verify using `s!verify` before using this command!')
+//             }
+//             axios.get('https://api.slothpixel.me/api/guilds/' + args[0])
+//             .then(res => {
+//                 if (msg.member.roles.cache.has('830185985400373278')) {
+//                     if (res.data.id == sentencia_id) {
+//                         member.roles.add(sentenciaRole)
+//                         msg.channel.send('Synced your account with the corresponding roles!')
+//                     } else if (res.data.id == inferior_id) {
+//                         member.roles.add(inferiorrole)
+//                         msg.channel.send('Synced your account with the corresponding roles!')
+//                     }
+//                 } else {
+//                     msg.channel.send('Please verify using `s!verify` before using this command!')
+//                 }
+    
+//             })
+//             .catch(err => console.log(err))
+//         })
+//         .catch(err => msg.channel.send('Please verify using `s!verify` before using this command!'))
+
+
+
+//     }
+// });
 
 client.on("message", msg => {
     if (msg.content.startsWith(prefix + 'say')) {
