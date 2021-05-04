@@ -20,7 +20,7 @@ client.snipes = new Map();
 
 
 // Importing other files (functions, api fetching etc.)
-const {tagHelp,guildroleHelp,verifyHelp,succesfullyunverifiedembed,wrongusername,alreadyverifiedembed,greqHelp,syncHelp,suggesstionHelp} = require('./variables/embeds.js');
+const {tagHelp,guildroleHelp,verifyHelp,succesfullyunverifiedembed,wrongusername,alreadyverifiedembed,greqHelp,syncHelp,suggesstionHelp, weightHelp, errorEmbeds,weightembed} = require('./variables/embeds.js');
 
 
 
@@ -1249,12 +1249,241 @@ client.on("message", msg => {
 
 // Testing stuff cmd below
 
-// client.on('message', msg => {
-//     if (msg.content.startsWith(prefix + 'e')) {
-//         hyp.getProfiles('5a8b1b90ccec48a4a5d536f731c5f926', process.env.HYPIXELKEY).then(console.log)
+client.on('message', msg => {
+    if (msg.content.startsWith(prefix + 'e')) {
 
-//     }
-// })
+
+
+    }
+})
+
+client.on('message', msg => {
+    if (msg.content.startsWith(prefix + 'weight')) {
+        let num = 0
+        let args = msg.content.split(" ").slice(1);
+        if (args[0] == undefined) {
+            msg.channel.send(weightHelp)
+        } else {
+            MojangAPI.nameToUuid(args[0], function(err, result) {
+                if (result == '') {
+                    msg.channel.send('That user does not exist!')
+                } else {
+                    axios.get(`https://hypixel-api.senither.com/v1/profiles/${result[0].id}?key=${process.env.HYPIXELKEY}`)
+                    .then(res => {
+                        let embed = weightembed(res.data.data[num].name, Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow), res.data.data[num].username)
+                        msg.channel.send(embed)
+                        .then(message => {
+                            message.react('👈')
+                            message.react('👉')
+                            const filter = (reaction, user) => {
+                                return reaction.emoji.name === '👈'  && user.id === msg.author.id || reaction.emoji.name === '👉' && user.id === msg.author.id;
+                            };
+                            
+                            const collector = message.createReactionCollector(filter, { time: 15000 });
+                            
+                            collector.on('collect', (reaction, user) => {
+                                if (reaction.emoji.name == '👈') {
+                                    reaction.users.remove(user.id)
+                                    if (num == 0) {
+                                        msg.channel.send('A profile before this does not exist!')
+                                        .then(sentmsg => setTimeout(function(){
+                                            sentmsg.delete()
+                                        }, 5000))
+                                    } else {
+                                        num = num - 1
+                                        let embed = weightembed(res.data.data[num].name, res.data.data[num].weight + res.data.data[num].weight_overflow, res.data.data[num].username)
+                                        if (res.data.data[num].name == undefined) {
+                                            msg.channel.send('Thats their last profile!')
+                                            return;
+                                        } else {
+                                            message.edit(embed)
+                                        }
+
+                                    }
+
+                                } else if (reaction.emoji.name == '👉') {
+                                    num = num + 1
+                                    reaction.users.remove(user.id)
+                                    console.log(res.data.data)
+                                    let embed = weightembed(res.data.data[num].name, res.data.data[num].weight + res.data.data[num].weight_overflow, res.data.data[num].username)
+                                    if (res.data.data[num] == undefined) {
+                                        msg.channel.send('That is their last profile!')
+                                    } else {
+                                        message.edit(embed)
+                                    }
+
+                                    
+                                }
+                                
+                            })
+                    })
+                    })
+                }
+                
+            })
+        }
+    }
+})
+
+// client.on('message', msg => {
+    //     if (msg.content.startsWith(prefix + 'weight')) {
+    //         let num = 0
+    //         let args = msg.content.split(" ").slice(1);
+    //         let isPrecise = false
+    //         let weight = 0
+    //         if (args[1] == 'precise') {
+    //             let isPrecise = true
+    //         } 
+    //         if (args[0] == undefined) {
+    //             msg.channel.send(weightHelp)
+    //         } else {
+    //             MojangAPI.nameToUuid(args[0], function(err, result) {
+    //                 if (result == '') {
+    //                     msg.channel.send('That user does not exist!')
+    //                 } else {
+    //                     axios.get(`https://hypixel-api.senither.com/v1/profiles/${result[0].id}?key=${process.env.HYPIXELKEY}`)
+    //                     .then(res => {
+    //                         if (isPrecise == true) {
+    //                             let weight = res.data.data[num].weight + res.data.data[num].weight_overflow 
+    //                             let embed = weightembed(res.data.data[num].name, weight , res.data.data[num].username)
+    //                             msg.channel.send(embed)
+    //                             .then(message => {
+    //                                 message.react('👈')
+    //                                 message.react('👉')
+    //                                 const filter = (reaction, user) => {
+    //                                     return reaction.emoji.name === '👈'  && user.id === msg.author.id || reaction.emoji.name === '👉' && user.id === msg.author.id;
+    //                                 };
+                                    
+    //                                 const collector = message.createReactionCollector(filter, { time: 15000 });
+                                    
+    //                                 collector.on('collect', (reaction, user) => {
+    //                                     if (reaction.emoji.name == '👈') {
+    //                                         reaction.users.remove(user.id)
+    //                                         if (num == 0) {
+    //                                             msg.channel.send('A profile before this does not exist!')
+    //                                             .then(sentmsg => setTimeout(function(){
+    //                                                 sentmsg.delete()
+    //                                             }, 5000))
+    //                                         } else {
+    //                                             num = num - 1
+    //                                             let weight = res.data.data[num].weight + res.data.data[num].weight_overflow 
+    //                                             let embed = weightembed(res.data.data[num].name, weight, res.data.data[num].username)
+    //                                             if (res.data.data[num].name == undefined) {
+    //                                                 msg.channel.send('Thats their last profile!')
+    //                                                 return;
+    //                                             } else {
+    //                                                 message.edit(embed)
+    //                                             }
+                                                
+        
+        
+    //                                         }
+        
+    //                                     } else if (reaction.emoji.name == '👉') {
+    //                                         if (isPrecise == true) {
+    //                                             num = num + 1
+    //                                             let weight = res.data.data[num].weight + res.data.data[num].weight_overflow
+    //                                             reaction.users.remove(user.id)
+    //                                             console.log(res.data.data)
+    //                                             let embed = weightembed(res.data.data[num].name, weight, res.data.data[num].username)
+    //                                             if (res.data.data[num] == undefined) {
+    //                                                 msg.channel.send('That is their last profile!')
+    //                                             } else {
+    //                                                 message.edit(embed)
+    //                                             }
+    //                                         } else {
+    //                                             num = num + 1
+    //                                             let weight = Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow)
+    //                                             reaction.users.remove(user.id)
+    //                                             console.log(res.data.data)
+    //                                             let embed = weightembed(res.data.data[num].name, weight, res.data.data[num].username)
+    //                                             if (res.data.data[num] == undefined) {
+    //                                                 msg.channel.send('That is their last profile!')
+    //                                             } else {
+    //                                                 message.edit(embed)
+    //                                             }
+    //                                         }
+        
+        
+                                            
+    //                                     }
+                                        
+    //                                 })
+    //                         })
+    //                         } else {
+    //                             let embed = weightembed(res.data.data[num].name, weight , res.data.data[num].username)
+    //                             let weight = Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow)
+    //                             msg.channel.send(embed)
+    //                             .then(message => {
+    //                                 message.react('👈')
+    //                                 message.react('👉')
+    //                                 const filter = (reaction, user) => {
+    //                                     return reaction.emoji.name === '👈'  && user.id === msg.author.id || reaction.emoji.name === '👉' && user.id === msg.author.id;
+    //                                 };
+                                    
+    //                                 const collector = message.createReactionCollector(filter, { time: 15000 });
+                                    
+    //                                 collector.on('collect', (reaction, user) => {
+    //                                     if (reaction.emoji.name == '👈') {
+    //                                         reaction.users.remove(user.id)
+    //                                         if (num == 0) {
+    //                                             msg.channel.send('A profile before this does not exist!')
+    //                                             .then(sentmsg => setTimeout(function(){
+    //                                                 sentmsg.delete()
+    //                                             }, 5000))
+    //                                         } else {
+    //                                             if (isPrecise == true) {
+    //                                                 num = num - 1
+    //                                                 let weight =  Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow)
+    //                                                 let embed = weightembed(res.data.data[num].name,weight, res.data.data[num].username)
+    //                                                 if (res.data.data[num].name == undefined) {
+    //                                                     msg.channel.send('Thats their last profile!')
+    //                                                     return;
+    //                                                 } else {
+    //                                                     message.edit(embed)
+    //                                                 }
+    //                                             } else {
+    //                                                 num = num - 1
+    //                                                 let weight = Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow)
+    //                                                 let embed = weightembed(res.data.data[num].name,weight, res.data.data[num].username)
+    //                                                 if (res.data.data[num].name == undefined) {
+    //                                                     msg.channel.send('Thats their last profile!')
+    //                                                     return;
+    //                                                 } else {
+    //                                                     message.edit(embed)
+    //                                                 }
+    //                                             }
+        
+        
+    //                                         }
+        
+    //                                     } else if (reaction.emoji.name == '👉') {
+    //                                         num = num + 1
+    //                                         let weight = Math.round(res.data.data[num].weight + res.data.data[num].weight_overflow)
+    //                                         reaction.users.remove(user.id)
+    //                                         console.log(res.data.data)
+    //                                         let embed = weightembed(res.data.data[num].name, weight, res.data.data[num].username)
+    //                                         if (res.data.data[num] == undefined) {
+    //                                             msg.channel.send('That is their last profile!')
+    //                                         } else {
+    //                                             message.edit(embed)
+    //                                         }
+        
+        
+                                            
+    //                                     }
+                                        
+    //                                 })
+    //                         })
+    //                         }
+    
+    //                     })
+    //                 }
+                    
+    //             })
+    //         }
+    //     }
+    // })
 
 client.on('messageDelete', msg => {
     client.snipes.set(msg.channel.id, {
@@ -1476,4 +1705,4 @@ client.on("message", msg => {
 
 
 
-client.login(process.env.TOKEN); // Gets token from .env file (the last bit is the variable within .env)
+client.login(process.env.TOKENTESTING); // Gets token from .env file (the last bit is the variable within .env)

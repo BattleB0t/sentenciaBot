@@ -25,6 +25,7 @@ const guildroleHelp = new Discord.MessageEmbed()
 .setDescription('Here are all valid commands:')
 .addFields(
     { name: 's!guildrole inferior @user', value: 'Adds the tagged user with the Sentencia Inferior guild role. Alias: s!guildrole i' },
+    { name: 's!guildrole legend @user', value: 'Adds the tagged user with the Sentencia Legend guild role. Alias: s!guildrole l' },
     { name: 's!guildrole eternal @user', value: 'Adds the tagged user with the Sentencia Eternal guild role. Alias: s!guildrole e' }
 )
 .setTimestamp()
@@ -63,7 +64,7 @@ const greqHelp = new Discord.MessageEmbed()
 .setTitle('Guild Requirements Command Help')
 .setDescription('Here are all valid commands:')
 .addFields(
-    { name: 's!greq (username)', value: 'Checks if the user meets the reqs of Sentencia Eternal. WIP: Can switch profiles using the <:NoU:834150570389929984> reaction' }
+    { name: 's!greq (username)', value: 'Checks if the user meets the reqs of Sentencia Eternal' }
 )
 .setTimestamp()
 .setAuthor('SENTENCIA | Skyblock Guild')
@@ -79,6 +80,18 @@ const suggesstionHelp = new Discord.MessageEmbed()
     { name: 's!suggest accept (suggestionID) (reason)', value: 'Accepts a suggestion. Note: Suggestion ID can be found in the footer of the suggestion embed.' },
     { name: 's!suggest deny (suggestionID) (reason)', value: 'Denies a suggestion' },
     { name: 's!suggest delete (suggestion ID)', value: 'Deletes the suggestion' },
+)
+.setTimestamp()
+.setAuthor('SENTENCIA | Skyblock Guild')
+.setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+.setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+
+const weightHelp = new Discord.MessageEmbed()
+.setColor('#ED820E')
+.setTitle('Weight Command Help')
+.setDescription('Here are all valid commands:')
+.addFields(
+    { name: 's!weight (username)', value: 'Shows weight of username. Can switch between profiles using the emojis. Optional flag - Preicse. Add it after the username to get the exact weight, not rounded to a nearest number.' }
 )
 .setTimestamp()
 .setAuthor('SENTENCIA | Skyblock Guild')
@@ -118,5 +131,33 @@ const succesfullyunverifiedembed = new Discord.MessageEmbed()
 .setTimestamp()
 .setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
 
+const errorEmbeds = function(err) {
+    const errorembed = new Discord.MessageEmbed()
+    .setColor('#ff0000')
+    .setTitle('Error!')
+    .setAuthor('SENTENCIA | Skyblock Guild')
+    .setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+    .addFields(
+        { name: 'An error occured!', value: 'Please forward this to a developer (<@504196872706064415>)! ```' + err + "```" }
+    )
+    .setDescription('')
+    .setTimestamp()
+    .setFooter('Sentencia Bot • Error Handling', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+    return errorembed
 
-module.exports = {tagHelp,guildroleHelp,verifyHelp,succesfullyunverifiedembed,wrongusername,alreadyverifiedembed,greqHelp,syncHelp,suggesstionHelp}
+}
+
+const weightembed = function(profilename, weight, username) {
+let embed = new Discord.MessageEmbed()
+.setColor('#ED820E ')
+.setAuthor('SENTENCIA | Skyblock Guild')
+.setThumbnail('https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png')
+.setTitle(`${username}'s Weight on the profile ${profilename}`)
+.setDescription(weight)
+.setTimestamp()
+.setFooter('Sentencia Bot', 'https://cdn.discordapp.com/attachments/832714326258614326/834808899717955584/SENTENCIA.png');
+
+return embed}
+
+
+module.exports = {tagHelp,guildroleHelp,verifyHelp,succesfullyunverifiedembed,wrongusername,alreadyverifiedembed,greqHelp,syncHelp,suggesstionHelp, weightHelp, errorEmbeds, weightembed}
